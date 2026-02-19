@@ -8,6 +8,21 @@ body{
     background: linear-gradient(133deg, #086375 1%, #820263 94%);
     background-attachment: fixed;
 }
+footer{
+    width: 100%;
+    color: wheat;
+    text-align: center;
+    padding: 5px;
+    font-family: sans-serif;
+    background: #113;
+}
+footer span{
+    color: #811;
+}
+footer a{
+    color: #379eb7;
+}
+
 .usr{
     background: #155a74;
     width: 100%;

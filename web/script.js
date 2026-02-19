@@ -12,17 +12,17 @@ let socket= new WebSocket('ws://'+addss+':5005');
 let user_name;
 let user_id;
 let cook = document.cookie.split('; ')
-/* User Preference*/
-for(var i=0; i<cook.length; i++){
-    c = cook[i].split('=') 
+/* User Account*/
+cook.forEach(a=>{
+    c = a.split('=') 
     if(c[0]=='usr_name'){
         user_name = c[1]
-        break;
+        return
     }else if(c[0]=='usr_id'){
         user_id = c[1]
-        break;
+        return
     }
-}
+})
 /* ******************* */
 
 socket.onopen= function() {

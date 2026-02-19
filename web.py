@@ -2,35 +2,34 @@ from bottle import route, run, static_file, request, template, TEMPLATE_PATH, re
 from datetime import datetime
 import json
 import socket
-import re
-
+import re   
 import os 
 import sys
-if getattr(sys, 'frozen', False):  # Check if running as a frozen executable
-        # Get the path to the executable
-        executable_path = sys.executable
-        # Extract the directory containing the executable
-        dir_path= os.path.dirname(executable_path)
-else:
-    # Running as a regular Python script
-    dir_path = os.getcwd()
 
-if not os.path.isdir(os.path.join(dir_path, 'resources')):
-    os.makedirs(os.path.join(dir_path, 'resources', 'uploads'))
-    with open(os.path.join(dir_path, 'resources', 'acc.db'), 'x') as f:
+base_path = os.getenv('APPDATA') 
+storage = os.path.join(base_path, "Private_Chat_App")
+if not os.path.exists(storage):
+    os.makedirs(storage)  
+
+        
+if not os.path.exists(os.path.join(storage, 'resources')):
+    os.makedirs(os.path.join(storage, 'resources'))
+    os.makedirs(os.path.join(storage, 'uploads'))
+    with open(os.path.join(storage, 'resources', 'acc.db'), 'x') as f:
         pass
 
-hostname = socket.gethostname()
-IPAddr = socket.gethostbyname(hostname)
-
+#User Credentials
 secret_key = 'jb_web_private_key'
+TEMPLATE_PATH.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), './web/'))
+
+
 uids = []
 users = []
 mnums = []
-year = datetime.now().year
-moth = datetime.now().month
-date = datetime.now().date
-TEMPLATE_PATH.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), './web/'))
+uids_users = {}
+seed = 1000
+shared_dict={}
+
 def has_numbers(inputString):
     return bool(re.search(r'\d', inputString))
 
@@ -43,6 +42,9 @@ def index():
 @route('/sign-up')    
 def sign_up():
     return template('./account/sign_up.html', error_message=None)
+@route('/login')
+def sign_up():
+    return template('./account/login.html', error_message=None)
 
 @route('/<file:path>')
 def resources(file):
@@ -61,26 +63,29 @@ def login():
 
 @route('/sign-up', method='POST')
 def create_account():
-    global seed
     if request.forms['mobile'] in mnums:
         return template('./account/sign_up.html', error_message='The mobile number is already registered. Please try other one')
     if not has_numbers(request.forms['mobile']):
         return template('./account/sign_up.html', error_message='Only numbers can be accepted. Please try other one')
     if bool(re.search('[;,?/<>%^*()-+]', request.forms['username'])):
         return template('./account/sign_up.html', error_message='User name can\'t contain ;,?/<>%^*()-+. Please try other one')
-        
+            
+    global seed
     seed+=1
     users.append(str(request.forms['username']).strip())
     mnums.append(request.forms['mobile'])
     uids.append(str(seed))
+    uids_users[str(seed)] = str(request.forms['username']).strip()
     response.set_cookie('ugr_cd', str(seed), secret=secret_key, maxage=2592000)
-    response.set_cookie('usr_cd', str(seed), maxage=2592000)
+    response.set_cookie('usr_id', str(seed), maxage=2592000)
     response.set_cookie('usr_name', request.forms['username'], maxage=2592000)
-    with open(os.path.join(dir_path,'resources', 'acc.db'), 'a') as f:
+    with open(os.path.join(storage,'resources', 'acc.db'), 'a') as f:
         f.write(f"{request.forms['username']}={request.forms['mobile']}={seed};")
+    shared_dict['uids'] = uids
+    shared_dict['uids_users'] = uids_users
     return redirect('/')
-    
-    
+        
+        
 @route('/file_upload', method='POST')
 def file_upload():
     upload = request.files
@@ -88,7 +93,7 @@ def file_upload():
     for key, value in dict(upload).items():
         value.filename = f"{str(datetime.now()).replace(':', '-')}_{value.filename}"
         files.append(value.filename)
-        value.save(os.path.join(dir_path,'uploads/')) # appends upload.filename automatically
+        value.save(os.path.join(storage,'uploads/')) # appends upload.filename automatically
         # name, ext = os.path.splitext(value.filename)
 
         # save_path = get_save_path_for_category(category)
@@ -96,12 +101,10 @@ def file_upload():
 
 @route('/get', method='GET')
 def get_file():
-    return static_file(request.query.file, root=os.path.join(dir_path,'uploads/'))
+    return static_file(request.query.file, root=os.path.join(storage,'uploads/'))
 
-global seed
-seed = 1000
-
-with open(os.path.join(dir_path,'resources', 'acc.db'), 'r') as f:
+## seting user acct info up
+with open(os.path.join(storage,'resources', 'acc.db'), 'r') as f:
     data = f.read()
     if data:
         accts = [x.split('=') for x in data.split(';')[:-1]]
@@ -109,11 +112,5 @@ with open(os.path.join(dir_path,'resources', 'acc.db'), 'r') as f:
             users.append(user)
             mnums.append(pas)
             uids.append(seed)
-        seed = int(seed)
-
-if __name__ == '__main__':
-    from  threading import Thread
-    import soket
-    t1 = Thread(target=soket.server.run_forever)
-    t1.start()
-    run(host=IPAddr, port=8080, debug=False,reloader=False)
+            uids_users[seed] = user
+            seed = int(seed)

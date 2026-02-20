@@ -1,7 +1,7 @@
 # Private Chat App
 
 Private Chat App is a  Python project that provides a private chat solution in the local network without Internet. This repository contains the server and also User entry point.
-[![Download App]](https://github.com/Jubayer-Hossain-JB/Private_Chat-App/blob/main/dist/Private%20Chat%20App.exe)
+[Download App](https://github.com/Jubayer-Hossain-JB/Private_Chat-App/blob/main/dist/Private%20Chat%20App.exe)
 ## Features
 - Socket-based chat backend
 - Web interface
